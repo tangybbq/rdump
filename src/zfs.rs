@@ -12,7 +12,10 @@ use std::{
     fs::File,
     io::{self, BufRead, BufReader},
     os::unix::io::{AsRawFd, FromRawFd},
-    process::{Command, Stdio},
+    process::Stdio,
+};
+use tokio::{
+    process::Command,
 };
 
 use crate::checked::CheckedExt;
@@ -39,7 +42,7 @@ pub struct Filesystem {
 
 impl Zfs {
     /// Construct a new Zfs retrieving all of the filesystems that are found on this system.
-    pub fn new(host: Option<&str>, prefix: &str) -> Result<Zfs> {
+    pub async fn new(host: Option<&str>, prefix: &str) -> Result<Zfs> {
         let quoted = regex::escape(prefix);
         let pat = format!("^{}(\\d{{4}})-([-\\d]+)$", quoted);
         let re = Regex::new(&pat)?;
@@ -59,7 +62,7 @@ impl Zfs {
         let out = cmd
             .args(&["list", "-H", "-t", "all", "-o", "name,mountpoint"])
             .stderr(Stdio::inherit())
-            .checked_output()?;
+            .checked_output().await?;
         let buf = out.stdout;
 
         let mut builder = SnapBuilder::new();
@@ -146,7 +149,7 @@ impl Zfs {
 
     /// Make a new snapshot of the given index on the given filesystem name.  The snapshot itself
     /// will be made recursively.
-    pub fn take_snapshot(&self, fs: &str, index: usize) -> Result<()> {
+    pub async fn take_snapshot(&self, fs: &str, index: usize) -> Result<()> {
         if self.host.is_some() {
             return Err(anyhow!("Only local snapshots supported"));
         }
@@ -155,12 +158,12 @@ impl Zfs {
         Command::new("zfs")
             .args(&["snapshot", "-r", &name])
             .stderr(Stdio::inherit())
-            .checked_run()?;
+            .checked_run().await?;
         Ok(())
     }
 
     /// Make a new snapshot, of a given name.
-    pub fn take_named_snapshot(&self, fs: &str, name: &str) -> Result<()> {
+    pub async fn take_named_snapshot(&self, fs: &str, name: &str) -> Result<()> {
         if self.host.is_some() {
             return Err(anyhow!("Only local snapshots supported"));
         }
@@ -168,13 +171,13 @@ impl Zfs {
         Command::new("zfs")
             .args(&["snapshot", &name])
             .stderr(Stdio::inherit())
-            .checked_run()?;
+            .checked_run().await?;
         Ok(())
     }
 
     /// Clone one volume tree to another.  Perform should be set to true to
     /// actually do the clones, otherwise it just prints what it would do.
-    pub fn clone(&self,
+    pub async fn clone(&self,
                  source: &str,
                  dest: &str,
                  dest_zfs: &Zfs,
@@ -207,7 +210,7 @@ impl Zfs {
             match dest_map.get(&src.name[source.len()..]) {
                 Some(d) => {
                     println!("Clone existing: {:?} to {:?}", src.name, d.name);
-                    self.clone_one(src, d, dest_zfs, perform)?;
+                    self.clone_one(src, d, dest_zfs, perform).await?;
                     if !perform {
                         println!("Clone from:");
                         serde_yaml::to_writer(io::stdout().lock(), src)?;
@@ -233,9 +236,9 @@ impl Zfs {
                     };
 
                     if perform {
-                        self.make_volume(src, &destfs)?;
+                        self.make_volume(src, &destfs).await?;
                     }
-                    self.clone_one(src, &destfs, dest_zfs, perform)?;
+                    self.clone_one(src, &destfs, dest_zfs, perform).await?;
                     if !perform {
                         println!("Clone from:");
                         serde_yaml::to_writer(io::stdout().lock(), src)?;
@@ -253,7 +256,7 @@ impl Zfs {
 
     /// Clone a single filesystem to an existing volume.  We assume there are no snapshots on the
     /// destination that aren't on the source (otherwise it isn't possible to do the clone).
-    fn clone_one(&self,
+    async fn clone_one(&self,
                  source: &Filesystem,
                  dest: &Filesystem,
                  dest_zfs: &Zfs,
@@ -278,11 +281,11 @@ impl Zfs {
                 source.name, ssnap, dest.name, dsnap
             );
 
-            let size = self.estimate_size(&source.name, Some(ssnap), dsnap)?;
+            let size = self.estimate_size(&source.name, Some(ssnap), dsnap).await?;
             println!("Estimate: {}", humanize_size(size));
 
             if perform {
-                self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size)?;
+                self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size).await?;
             }
 
             Ok(())
@@ -297,9 +300,9 @@ impl Zfs {
 
             println!("Full clone from {}@{} to {}", source.name, dsnap, dest.name);
 
-            let size = self.estimate_size(&source.name, None, dsnap)?;
+            let size = self.estimate_size(&source.name, None, dsnap).await?;
             println!("Estimate: {}", humanize_size(size));
-            self.do_clone(&source.name, &dest.name, None, dsnap, &dest_zfs, size)?;
+            self.do_clone(&source.name, &dest.name, None, dsnap, &dest_zfs, size).await?;
 
             // Run the clone on the rest of the image.
             let ssnap = dsnap;
@@ -307,9 +310,9 @@ impl Zfs {
 
             // If there are more snapshots to make, clone the rest.
             if ssnap != dsnap {
-                let size = self.estimate_size(&source.name, Some(ssnap), dsnap)?;
+                let size = self.estimate_size(&source.name, Some(ssnap), dsnap).await?;
                 if perform {
-                    self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size)?;
+                    self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size).await?;
                 }
             }
 
@@ -319,7 +322,7 @@ impl Zfs {
 
     /// Use zfs send to estimate the size of this incremental backup.  If the source snap is none,
     /// operate as a full clone.
-    fn estimate_size(&self, source: &str, ssnap: Option<&str>, dsnap: &str) -> Result<usize> {
+    async fn estimate_size(&self, source: &str, ssnap: Option<&str>, dsnap: &str) -> Result<usize> {
         let mut cmd = Command::new("zfs");
         cmd.arg("send");
         cmd.arg("-nP");
@@ -329,7 +332,7 @@ impl Zfs {
         }
         cmd.arg(&format!("{}@{}", source, dsnap));
         cmd.stderr(Stdio::inherit());
-        let out = cmd.checked_output()?;
+        let out = cmd.checked_output().await?;
 
         let buf = out.stdout;
         for line in BufReader::new(&buf[..]).lines() {
@@ -352,7 +355,7 @@ impl Zfs {
     }
 
     /// Perform the actual clone.
-    fn do_clone(
+    async fn do_clone(
         &self,
         source: &str,
         dest: &str,
@@ -404,13 +407,13 @@ impl Zfs {
         // pv -s <size>
         // zfs receive -vFu <dest>
 
-        if !sender.wait()?.success() {
+        if !sender.wait().await?.success() {
             return Err(anyhow!("zfs send error"));
         }
-        if !pv.wait()?.success() {
+        if !pv.wait().await?.success() {
             return Err(anyhow!("pv error"));
         }
-        if !receiver.wait()?.success() {
+        if !receiver.wait().await?.success() {
             return Err(anyhow!("zfs receive error"));
         }
 
@@ -420,7 +423,7 @@ impl Zfs {
     /// Prune old snapshots.  This is a Hanoi-type pruning model, where we keep the most recent
     /// snapshot that has the same number of bits set in it.  In addition, we keep a certain number
     /// `PRUNE_KEEP` of the most recent snapshots.
-    pub fn prune_hanoi(&self, fs_name: &str, really: bool) -> Result<()> {
+    pub async fn prune_hanoi(&self, fs_name: &str, really: bool) -> Result<()> {
         let fs = if let Some(fs) = self.filesystems.iter().find(|fs| fs.name == fs_name) {
             fs
         } else {
@@ -472,7 +475,7 @@ impl Zfs {
                     .arg("destroy")
                     .arg(&prune_name)
                     .stderr(Stdio::inherit())
-                    .checked_run()?;
+                    .checked_run().await?;
             }
         }
 
@@ -481,7 +484,7 @@ impl Zfs {
 
     /// Prune a single snapshot (possibly, based on `really`).  This will
     /// attempt to make a bookmark first.
-    pub fn prune(&self, vol: &str, snap: &str, really: bool) -> Result<()> {
+    pub async fn prune(&self, vol: &str, snap: &str, really: bool) -> Result<()> {
         if really {
             // Try creating a bookmark.
             println!("pruning: {:?}@{:?}", vol, snap);
@@ -490,7 +493,7 @@ impl Zfs {
                 .arg(&format!("{}@{}", vol, snap))
                 .arg(&format!("{}#{}", vol, snap))
                 .stderr(Stdio::inherit())
-                .status()?;
+                .status().await?;
             if !status.success() {
                 println!("  error creating bookmark");
             }
@@ -500,7 +503,7 @@ impl Zfs {
                 .arg("destroy")
                 .arg(&format!("{}@{}", vol, snap))
                 .stderr(Stdio::inherit())
-                .checked_run()?;
+                .checked_run().await?;
         } else {
             println!("would prune {:?}@{:?}", vol, snap);
         }
@@ -509,12 +512,12 @@ impl Zfs {
 
     /// Construct a new volume at "dest".  Copies over certain attributes (acltype, xattr, atime,
     /// relatime) that are relevant to the snapshot being correct.
-    fn make_volume(&self, src: &Filesystem, dest: &Filesystem) -> Result<()> {
+    async fn make_volume(&self, src: &Filesystem, dest: &Filesystem) -> Result<()> {
         // Read the attributes from the source volume.
         let out = Command::new("zfs")
             .args(&["get", "-Hp", "all", &src.name])
             .stderr(Stdio::inherit())
-            .checked_output()?;
+            .checked_output().await?;
         let buf = out.stdout;
         let mut props = vec![];
         for line in BufReader::new(&buf[..]).lines() {
@@ -549,7 +552,7 @@ impl Zfs {
             .args(&props)
             .arg(&dest.name)
             .stderr(Stdio::inherit())
-            .checked_run()?;
+            .checked_run().await?;
 
         Ok(())
     }

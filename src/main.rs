@@ -6,8 +6,9 @@ use zfs::Zfs;
 mod checked;
 mod zfs;
 
-fn main() -> Result<()> {
-    let fs = Zfs::new(None, "lint")?;
+#[tokio::main]
+async fn main() -> Result<()> {
+    let fs = Zfs::new(None, "lint").await?;
     println!("{:#?}", fs);
     Ok(())
 }
