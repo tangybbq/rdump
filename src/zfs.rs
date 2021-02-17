@@ -20,6 +20,10 @@ use tokio::{
 
 use crate::checked::CheckedExt;
 
+// This is an assumption, which seems to be true on at least Fedora and
+// Gentoo installs of ZFS.
+static ZFS: &'static str = "/sbin/zfs";
+
 #[derive(Debug)]
 pub struct Zfs {
     /// The snapshot prefix.  Different prefixes can be used at different times, which will result
@@ -52,10 +56,10 @@ impl Zfs {
         // lexicographically, at least in some kind of tree order.  The snapshots come out in the
         // order they were created.
         let mut cmd = match host {
-            None => Command::new("zfs"),
+            None => Command::new(ZFS),
             Some(host) => {
                 let mut cmd = Command::new("ssh");
-                cmd.args(&[host, "sudo", "zfs"]);
+                cmd.args(&[host, "sudo", ZFS]);
                 cmd
             }
         };
@@ -155,7 +159,7 @@ impl Zfs {
         }
         let name = format!("{}@{}", fs, self.snap_name(index));
         println!("Make snapshot: {}", name);
-        Command::new("zfs")
+        Command::new(ZFS)
             .args(&["snapshot", "-r", &name])
             .stderr(Stdio::inherit())
             .checked_run().await?;
@@ -168,7 +172,7 @@ impl Zfs {
             return Err(anyhow!("Only local snapshots supported"));
         }
         let name = format!("{}@{}", fs, name);
-        Command::new("zfs")
+        Command::new(ZFS)
             .args(&["snapshot", &name])
             .stderr(Stdio::inherit())
             .checked_run().await?;
@@ -323,7 +327,7 @@ impl Zfs {
     /// Use zfs send to estimate the size of this incremental backup.  If the source snap is none,
     /// operate as a full clone.
     async fn estimate_size(&self, source: &str, ssnap: Option<&str>, dsnap: &str) -> Result<usize> {
-        let mut cmd = Command::new("zfs");
+        let mut cmd = Command::new(ZFS);
         cmd.arg("send");
         cmd.arg("-nP");
         if let Some(ssnap) = ssnap {
@@ -365,7 +369,7 @@ impl Zfs {
         size: usize,
     ) -> Result<()> {
         // Construct a pipeline from zfs -> pv -> zfs.  PV is used to monitor the progress.
-        let mut cmd = Command::new("zfs");
+        let mut cmd = Command::new(ZFS);
         cmd.arg("send");
         if let Some(ssnap) = ssnap {
             cmd.arg("-I");
@@ -391,10 +395,10 @@ impl Zfs {
         let pv_out = pv.stdout.as_ref().expect("PV output").as_raw_fd();
 
         let mut cmd = match &dest_zfs.host {
-            None => Command::new("zfs"),
+            None => Command::new(ZFS),
             Some(host) => {
                 let mut cmd = Command::new("ssh");
-                cmd.args(&[host, "sudo", "zfs"]);
+                cmd.args(&[host, "sudo", ZFS]);
                 cmd
             }
         };
@@ -471,7 +475,7 @@ impl Zfs {
                 prune_name
             );
             if really {
-                Command::new("zfs")
+                Command::new(ZFS)
                     .arg("destroy")
                     .arg(&prune_name)
                     .stderr(Stdio::inherit())
@@ -488,7 +492,7 @@ impl Zfs {
         if really {
             // Try creating a bookmark.
             println!("pruning: {:?}@{:?}", vol, snap);
-            let status = Command::new("zfs")
+            let status = Command::new(ZFS)
                 .arg("bookmark")
                 .arg(&format!("{}@{}", vol, snap))
                 .arg(&format!("{}#{}", vol, snap))
@@ -499,7 +503,7 @@ impl Zfs {
             }
 
             // destroy the snapshot
-            Command::new("zfs")
+            Command::new(ZFS)
                 .arg("destroy")
                 .arg(&format!("{}@{}", vol, snap))
                 .stderr(Stdio::inherit())
@@ -514,7 +518,7 @@ impl Zfs {
     /// relatime) that are relevant to the snapshot being correct.
     async fn make_volume(&self, src: &Filesystem, dest: &Filesystem) -> Result<()> {
         // Read the attributes from the source volume.
-        let out = Command::new("zfs")
+        let out = Command::new(ZFS)
             .args(&["get", "-Hp", "all", &src.name])
             .stderr(Stdio::inherit())
             .checked_output().await?;
@@ -547,7 +551,7 @@ impl Zfs {
         }
         println!("   props: {:?}", props);
 
-        Command::new("zfs")
+        Command::new(ZFS)
             .arg("create")
             .args(&props)
             .arg(&dest.name)
