@@ -8,10 +8,7 @@ use clap::{
 use std::{
     path::Path,
 };
-use zfs::Zfs;
-
-mod checked;
-mod zfs;
+use rdump::Zfs;
 
 #[tokio::main]
 async fn main() -> Result<()> {
