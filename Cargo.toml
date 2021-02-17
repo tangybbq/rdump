@@ -10,7 +10,16 @@ edition = "2018"
 anyhow = "1.0"
 async-trait = "0.1"
 chrono = "0.4"
+clap = { version = "2.33", features = ["yaml"] }
 regex = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
-tokio = { version = "1", features = ["io-util", "process", "macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["fs", "io-util", "process", "macros", "rt-multi-thread"] }
+
+# Pre-crating, pull in rsure by relative path.
+rsure = { path = "../../wd/rsure" }
+
+# Rsure is quite slow if not built with optimizations.  Enable at
+# least a bit so it is usable.
+[profile.dev]
+opt-level = 2

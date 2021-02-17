@@ -1,0 +1,19 @@
+name: rdump
+verion: "0.1"
+author: David Brown <davidb@davidb.org>
+about: Backup management software
+args:
+  - config:
+      short: c
+      long: config
+      value_name: FILE
+      help: Set a custom config file
+      takes_value: true
+subcommands:
+  - clone:
+      about: Clone ZFS filesystems
+      args:
+        - VOLUME:
+            help: Volume to clone (from config file)
+            required: true
+            index: 1
