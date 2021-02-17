@@ -26,7 +26,10 @@ async fn main() -> Result<()> {
 
     if let Some(matches) = matches.subcommand_matches("clone") {
         let volume = matches.value_of("VOLUME").unwrap();
+        let _sudo = rdump::Sudo::start(true).await?;
         println!("volume: {:?}", volume);
+        println!("Sleeping 1 minute");
+        tokio::time::sleep(std::time::Duration::from_secs(60)).await;
     }
 
     Ok(())

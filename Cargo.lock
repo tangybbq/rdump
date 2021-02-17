@@ -57,6 +57,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "async_once"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58f8f7a882f8fffee0bdbb0580033b01613b50781e03c02713da0599ed90b595"
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -631,13 +637,18 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "async_once",
  "chrono",
  "clap",
+ "env_logger",
+ "lazy_static",
+ "log",
  "regex",
  "rsure",
  "serde",
  "serde_yaml",
  "tokio",
+ "users",
 ]
 
 [[package]]
@@ -941,6 +952,16 @@ name = "unicode-xid"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
+
+[[package]]
+name = "users"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24cc0f6d6f267b73e5a2cadf007ba8f9bc39c6a6f9666f8cf25ea809a153b032"
+dependencies = [
+ "libc",
+ "log",
+]
 
 [[package]]
 name = "vcpkg"

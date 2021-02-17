@@ -11,13 +11,23 @@ anyhow = "1.0"
 async-trait = "0.1"
 chrono = "0.4"
 clap = { version = "2.33", features = ["yaml"] }
+env_logger = "0.8"
+log = "0.4"
 regex = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
-tokio = { version = "1", features = ["fs", "io-util", "process", "macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["fs", "io-util", "process",
+	"macros", "rt-multi-thread", "time"] }
+users = "0.11"
 
 # Pre-crating, pull in rsure by relative path.
 rsure = { path = "../../wd/rsure" }
+
+[dev-dependencies]
+# For tests, we need lazy_static and async_once to initialize the
+# logging and sudo framework for the tests.
+lazy_static = "1.4"
+async_once = "0.2.1"
 
 # Rsure is quite slow if not built with optimizations.  Enable at
 # least a bit so it is usable.
