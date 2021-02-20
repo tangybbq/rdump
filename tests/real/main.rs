@@ -7,6 +7,8 @@ use rdump::{
     Sudo,
 };
 
+mod lvm;
+
 // We'll use the once to initialize the logging system, but since
 // lazy_static items are never destroyed, it would leave background sudo
 // tasks running.

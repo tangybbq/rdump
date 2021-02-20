@@ -61,6 +61,18 @@ impl Sudo {
         Ok(Sudo { child })
     }
 
+    /// Return a new Command to run in this context, but with the proper
+    /// wrapper to perform as root.
+    pub fn new_cmd(&self, cmd: &str) -> Command {
+        if self.child.is_some() {
+            let mut res = Command::new("sudo");
+            res.arg(cmd);
+            res
+        } else {
+            Command::new(cmd)
+        }
+    }
+
     /// Ensure that sudo has been run.  This may prompt for a password the
     /// first time, but as long as it is run regularly, should keep
     /// additional prompts from being needed.
