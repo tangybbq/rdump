@@ -14,7 +14,6 @@ use rdump::CheckedExt;
 use anyhow::Result;
 use std::{
     mem,
-    process::Stdio,
 };
 use tokio::process::Command;
 
@@ -45,9 +44,7 @@ impl LvmTest {
         log::info!("Creating lvm volume {}/{}", pv, prefix);
         Command::new("lvcreate")
             .args(&["-L", "5G", "--yes", "-n", prefix, pv])
-            .stderr(Stdio::inherit())
-            .stdin(Stdio::null())
-            .checked_run().await?;
+            .checked_noio().await?;
 
         let mut result = LvmTest {
             pv: pv.to_owned(),
@@ -67,15 +64,11 @@ impl LvmTest {
         log::info!("Cloning git repo into fs");
         Command::new("git")
             .args(&["clone", ZEPHYR_PARENT, &dest])
-            .stderr(Stdio::inherit())
-            .stdin(Stdio::null())
-            .checked_run().await?;
+            .checked_noio().await?;
         Command::new("git")
             .args(&["checkout", "v1.0.0"])
             .current_dir(&dest)
-            .stderr(Stdio::inherit())
-            .stdin(Stdio::null())
-            .checked_run().await?;
+            .checked_noio().await?;
 
         log::info!("Filesystem mounted at {}", mp);
         Ok(result)
@@ -88,9 +81,7 @@ impl LvmTest {
             FileSystem::Ext4 => {
                 Command::new("mkfs.ext4")
                     .arg(&device)
-                    .stderr(Stdio::inherit())
-                    .stdin(Stdio::null())
-                    .checked_run().await?;
+                    .checked_noio().await?;
             }
             FileSystem::Xfs => {
                 unimplemented!()
@@ -107,17 +98,13 @@ impl LvmTest {
         // Make sure the mount directory exists.
         Command::new("mkdir")
             .args(&["-p", &mp])
-            .stderr(Stdio::inherit())
-            .stdin(Stdio::null())
-            .checked_run().await?;
+            .checked_noio().await?;
 
         match self.fs {
             FileSystem::Ext4 => {
                 Command::new("mount")
                     .args(&[&self.device_name(extra), &mp])
-                    .stderr(Stdio::inherit())
-                    .stdin(Stdio::null())
-                    .checked_run().await?;
+                    .checked_noio().await?;
             }
             FileSystem::Xfs => unimplemented!(),
         }
@@ -147,18 +134,14 @@ impl LvmTest {
             log::info!("Unmounting {}", mp);
             Command::new("umount")
                 .arg(&mp)
-                .stderr(Stdio::inherit())
-                .stdin(Stdio::null())
-                .checked_run().await?;
+                .checked_noio().await?;
         }
 
         if mem::replace(&mut self.volume_created, false) {
             log::info!("Destroying LVM {}/{}", self.pv, self.prefix);
             Command::new("lvremove")
                 .args(&["-f", &format!("{}/{}", self.pv, self.prefix)])
-                .stderr(Stdio::inherit())
-                .stdin(Stdio::null())
-                .checked_run().await?;
+                .checked_noio().await?;
         }
         log::info!("Lvm cleanup done");
 
