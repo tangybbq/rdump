@@ -17,7 +17,12 @@ async fn main() -> Result<()> {
 
     env_logger::init();
 
+    // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4).await?;
+    lvm.cleanup().await?;
+
+    // Second test, with xfs
+    let mut lvm = lvm::LvmTest::setup("joke", "xfstest", lvm::FileSystem::Xfs).await?;
     lvm.cleanup().await?;
 
     Ok(())

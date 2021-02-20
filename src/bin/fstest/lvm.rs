@@ -84,7 +84,9 @@ impl LvmTest {
                     .checked_noio().await?;
             }
             FileSystem::Xfs => {
-                unimplemented!()
+                Command::new("mkfs.xfs")
+                    .arg(&device)
+                    .checked_noio().await?;
             }
         }
 
@@ -106,7 +108,11 @@ impl LvmTest {
                     .args(&[&self.device_name(extra), &mp])
                     .checked_noio().await?;
             }
-            FileSystem::Xfs => unimplemented!(),
+            FileSystem::Xfs => {
+                Command::new("mount")
+                    .args(&[&self.device_name(extra), &mp])
+                    .checked_noio().await?;
+            }
         }
 
         // If the mount works, stick the mountpoint so we can know to
