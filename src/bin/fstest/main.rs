@@ -6,6 +6,7 @@
 //! sense for these to be multi-threaded.
 
 use anyhow::Result;
+use chrono::Utc;
 use rdump::{
     actions::{self, Action},
 };
@@ -54,10 +55,19 @@ fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
     let new_mount = lvm.mountpoint("_snap");
     let mut a4 = actions::LvmRsure::new(&mp, &new_mount)?;
 
+    let local = Utc::now().format("%Y%m%dT%H%M%S");
+    let backup_name = format!("{}-{}", lvm.prefix, local);
+    let mut a5 = actions::BorgBackup::new(
+        &new_mount,
+        "/home/davidb/back/fstest-borg.sh",
+        &backup_name)?;
+
     a1.perform()?;
     a2.perform()?;
     a3.perform()?;
     a4.perform()?;
+    a5.perform()?;
+    a5.cleanup()?;
     a4.cleanup()?;
     a3.cleanup()?;
     a2.cleanup()?;

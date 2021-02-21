@@ -6,10 +6,12 @@
 
 use anyhow::Result;
 
+pub use borg::BorgBackup;
 pub use snaps::{
     Stamp, LvmSnapshot, MountSnap, LvmRsure,
 };
 
+mod borg;
 mod snaps;
 
 pub trait Action {
