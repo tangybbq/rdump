@@ -6,6 +6,12 @@
 //! sense for these to be multi-threaded.
 
 use anyhow::Result;
+use rdump::{
+    actions::{self, Action},
+};
+use std::{
+    path::Path,
+};
 
 mod lvm;
 
@@ -18,6 +24,12 @@ fn main() -> Result<()> {
 
     // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4)?;
+
+    let mp = lvm.mountpoint("");
+    let mut a1 = actions::Stamp::new(&Path::new(&mp).join("snapstamp"))?;
+    a1.perform()?;
+    a1.cleanup()?;
+
     lvm.cleanup()?;
 
     // Second test, with xfs
