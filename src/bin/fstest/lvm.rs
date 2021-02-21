@@ -66,7 +66,7 @@ impl LvmTest {
             .args(&["clone", ZEPHYR_PARENT, &dest])
             .checked_noio()?;
         Command::new("git")
-            .args(&["checkout", "v1.0.0"])
+            .args(&["checkout", "-q", "v1.0.0"])
             .current_dir(&dest)
             .checked_noio()?;
 
@@ -82,7 +82,7 @@ impl LvmTest {
         let dest = format!("{}/zephyr", mp);
         log::info!("Moving FS data in {} to {}", dest, version);
         Command::new("git")
-            .args(&["checkout", version])
+            .args(&["checkout", "-q", version])
             .current_dir(&dest)
             .checked_noio()?;
         Ok(())
