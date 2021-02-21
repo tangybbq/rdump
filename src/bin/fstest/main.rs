@@ -20,7 +20,9 @@ fn main() -> Result<()> {
         return Err(anyhow::anyhow!("fstest needs to be run as root"));
     }
 
-    env_logger::init();
+    // Initialze the logger that interacts well with rsure's progress
+    // meter.
+    rsure::log_init();
 
     // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4)?;

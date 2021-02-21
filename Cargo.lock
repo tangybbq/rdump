@@ -596,7 +596,6 @@ dependencies = [
  "async_once",
  "chrono",
  "clap",
- "env_logger",
  "lazy_static",
  "log",
  "regex",
