@@ -80,6 +80,9 @@ impl Action for LvmSnapshot {
     }
 
     fn cleanup(&mut self) -> Result<()> {
+        Command::new("lvremove")
+            .args(&["-f", &format!("{}/{}", self.pv, self.snap)])
+            .checked_noio()?;
         Ok(())
     }
 }
