@@ -11,41 +11,38 @@
 
 use crate::Result;
 use anyhow::anyhow;
-use tokio::{
+use std::{
     process::Command,
+    thread,
+    time::Duration,
 };
-use tokio::time;
 
 pub struct Sudo {
     // The join handle for the background task, so that we can kill it when
     // the last Sudo goes out of scope.  The challenge here is that the
     // background task itself can't hold a reference to it.
-    child: Option<tokio::task::JoinHandle<()>>,
+    child: Option<thread::JoinHandle<()>>,
 }
 
 impl Sudo {
     /// Possibly start a sudo runner.  This will determine if sudo is
     /// needed based both on the `enable` flag (presumably from a config
     /// file) as well as by determining if we are already running as root.
-    pub async fn start(enable: bool) -> Result<Sudo> {
+    pub fn start(enable: bool) -> Result<Sudo> {
         let is_root = users::get_effective_uid() == 0;
 
         let enabled = enable && !is_root;
 
         if enabled {
-            Sudo::poke_sudo().await?
+            Sudo::poke_sudo()?
         }
 
         let child = if enabled {
-            Some(tokio::spawn(async {
-                let interval = time::interval(time::Duration::from_secs(60));
-                tokio::pin!(interval);
-
-                // Skip the first, as it happens immediately.
-                interval.as_mut().tick().await;
+            Some(thread::spawn(|| {
                 loop {
-                    interval.as_mut().tick().await;
-                    match Sudo::poke_sudo().await {
+                    thread::sleep(Duration::from_secs(60));
+
+                    match Sudo::poke_sudo() {
                         Ok(_) => (),
                         Err(e) => {
                             log::error!("Error running background sudo: {:?}", e);
@@ -76,10 +73,10 @@ impl Sudo {
     /// Ensure that sudo has been run.  This may prompt for a password the
     /// first time, but as long as it is run regularly, should keep
     /// additional prompts from being needed.
-    async fn poke_sudo() -> Result<()> {
+    fn poke_sudo() -> Result<()> {
         let status = Command::new("sudo")
             .arg("true")
-            .status().await?;
+            .status()?;
         if !status.success() {
             return Err(anyhow!("unable to run sudo: {:?}", status.code()));
         }
@@ -91,9 +88,11 @@ impl Sudo {
 // Drop for Sudo will stop the background task from running.
 impl Drop for Sudo {
     fn drop(&mut self) {
-        if let Some(child) = self.child.take() {
+        if let Some(_child) = self.child.take() {
             log::info!("Stopping Sudo");
-            child.abort();
+            // Regular threads don't have any way to kill them, but this
+            // will exit when the program does.
+            // child.abort();
         }
     }
 }

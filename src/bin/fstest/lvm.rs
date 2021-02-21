@@ -14,8 +14,8 @@ use rdump::CheckedExt;
 use anyhow::Result;
 use std::{
     mem,
+    process::Command,
 };
-use tokio::process::Command;
 
 static ZEPHYR_PARENT: &'static str = "/lint/zephyr/zephyr.git";
 static MOUNT_BASE: &'static str = "/mnt/test";
@@ -36,7 +36,7 @@ pub enum FileSystem {
 
 impl LvmTest {
     /// Set up a new filesystem on the given pv with the given prefix.
-    pub async fn setup(pv: &str, prefix: &str, fs: FileSystem) -> Result<LvmTest> {
+    pub fn setup(pv: &str, prefix: &str, fs: FileSystem) -> Result<LvmTest> {
         // Create a 5GB volume to house this data.
         // "--yes" is somewhat dangerous but there doesn't seem to be any
         // way to get lvcreate to wipte the signatures without it becoming
@@ -44,7 +44,7 @@ impl LvmTest {
         log::info!("Creating lvm volume {}/{}", pv, prefix);
         Command::new("lvcreate")
             .args(&["-L", "5G", "--yes", "-n", prefix, pv])
-            .checked_noio().await?;
+            .checked_noio()?;
 
         let mut result = LvmTest {
             pv: pv.to_owned(),
@@ -54,8 +54,8 @@ impl LvmTest {
             mount: None,
         };
 
-        result.mkfs().await?;
-        result.mount("").await?;
+        result.mkfs()?;
+        result.mount("")?;
 
         let mp = result.mountpoint("");
 
@@ -64,29 +64,29 @@ impl LvmTest {
         log::info!("Cloning git repo into fs");
         Command::new("git")
             .args(&["clone", ZEPHYR_PARENT, &dest])
-            .checked_noio().await?;
+            .checked_noio()?;
         Command::new("git")
             .args(&["checkout", "v1.0.0"])
             .current_dir(&dest)
-            .checked_noio().await?;
+            .checked_noio()?;
 
         log::info!("Filesystem mounted at {}", mp);
         Ok(result)
     }
 
-    async fn mkfs(&self) -> Result<()> {
+    fn mkfs(&self) -> Result<()> {
         let device = self.device_name("");
 
         match self.fs {
             FileSystem::Ext4 => {
                 Command::new("mkfs.ext4")
                     .arg(&device)
-                    .checked_noio().await?;
+                    .checked_noio()?;
             }
             FileSystem::Xfs => {
                 Command::new("mkfs.xfs")
                     .arg(&device)
-                    .checked_noio().await?;
+                    .checked_noio()?;
             }
         }
 
@@ -94,24 +94,24 @@ impl LvmTest {
     }
 
     /// Mount this filesystem/prefix.
-    async fn mount(&mut self, extra: &str) -> Result<()> {
+    fn mount(&mut self, extra: &str) -> Result<()> {
         let mp = self.mountpoint(extra);
 
         // Make sure the mount directory exists.
         Command::new("mkdir")
             .args(&["-p", &mp])
-            .checked_noio().await?;
+            .checked_noio()?;
 
         match self.fs {
             FileSystem::Ext4 => {
                 Command::new("mount")
                     .args(&[&self.device_name(extra), &mp])
-                    .checked_noio().await?;
+                    .checked_noio()?;
             }
             FileSystem::Xfs => {
                 Command::new("mount")
                     .args(&[&self.device_name(extra), &mp])
-                    .checked_noio().await?;
+                    .checked_noio()?;
             }
         }
 
@@ -133,21 +133,21 @@ impl LvmTest {
         format!("{}/{}{}", MOUNT_BASE, self.prefix, extra)
     }
 
-    /// Async cleanup.
-    pub async fn cleanup(&mut self) -> Result<()> {
+    /// Cleanup.  TODO: Use drop for this.
+    pub fn cleanup(&mut self) -> Result<()> {
         log::info!("Lvm cleanup");
         if let Some(mp) = self.mount.take() {
             log::info!("Unmounting {}", mp);
             Command::new("umount")
                 .arg(&mp)
-                .checked_noio().await?;
+                .checked_noio()?;
         }
 
         if mem::replace(&mut self.volume_created, false) {
             log::info!("Destroying LVM {}/{}", self.pv, self.prefix);
             Command::new("lvremove")
                 .args(&["-f", &format!("{}/{}", self.pv, self.prefix)])
-                .checked_noio().await?;
+                .checked_noio()?;
         }
         log::info!("Lvm cleanup done");
 

@@ -6,14 +6,15 @@ use clap::{
     load_yaml,
 };
 use std::{
+    fs,
     path::Path,
+    thread,
 };
 use rdump::Zfs;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     if false {
-        wasy().await?;
+        wasy()?;
     }
 
     let yaml = load_yaml!("cli.yaml");
@@ -26,17 +27,17 @@ async fn main() -> Result<()> {
 
     if let Some(matches) = matches.subcommand_matches("clone") {
         let volume = matches.value_of("VOLUME").unwrap();
-        let _sudo = rdump::Sudo::start(true).await?;
+        let _sudo = rdump::Sudo::start(true)?;
         println!("volume: {:?}", volume);
         println!("Sleeping 1 minute");
-        tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        thread::sleep(std::time::Duration::from_secs(60));
     }
 
     Ok(())
 }
 
-async fn wasy() -> Result<()> {
-    let fs = Zfs::new(None, "da2021").await?;
+fn wasy() -> Result<()> {
+    let fs = Zfs::new(None, "da2021")?;
     // println!("{:#?}", fs);
 
     // Scan each filesystem that has a mountpoint, looking for a
@@ -45,7 +46,7 @@ async fn wasy() -> Result<()> {
     for fs in &fs.filesystems {
         let base = Path::new(&fs.mount);
         let work = base.join(".zfssync.yml");
-        match tokio::fs::metadata(&work).await {
+        match fs::metadata(&work) {
             Ok(_) => valid.push(fs),
             Err(_) => (),
         }
