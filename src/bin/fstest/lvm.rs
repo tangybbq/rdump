@@ -21,8 +21,8 @@ static ZEPHYR_PARENT: &'static str = "/lint/zephyr/zephyr.git";
 static MOUNT_BASE: &'static str = "/mnt/test";
 
 pub struct LvmTest {
-    pv: String,
-    prefix: String,
+    pub pv: String,
+    pub prefix: String,
     fs: FileSystem,
     volume_created: bool,
     mount: Option<String>,

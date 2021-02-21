@@ -9,7 +9,10 @@ use std::{
     fs::OpenOptions,
     io::Write,
     path::Path,
+    process::Command,
 };
+
+use crate::checked::CheckedExt;
 
 pub trait Action {
     fn perform(&mut self) -> Result<()>;
@@ -51,18 +54,65 @@ impl Action for Stamp {
     }
 }
 
-/*
 pub struct LvmSnapshot {
     pv: String,
     base: String,
     snap: String,
 }
 
+impl LvmSnapshot {
+    pub fn new(pv: &str, base: &str, snap: &str) -> Result<LvmSnapshot> {
+        Ok(LvmSnapshot {
+            pv: pv.into(),
+            base: base.into(),
+            snap: snap.into(),
+        })
+    }
+}
+
 impl Action for LvmSnapshot {
     fn perform(&mut self) -> Result<()> {
+        Command::new("lvcreate")
+            .args(&["-L", "1g", "-s", "-n", &self.snap,
+                &format!("{}/{}", self.pv, self.base)])
+            .checked_noio()?;
+        Ok(())
     }
 
     fn cleanup(&mut self) -> Result<()> {
+        Ok(())
     }
 }
-*/
+
+pub struct MountSnap {
+    device: String,
+    mount: String,
+}
+
+impl MountSnap {
+    pub fn new(device: &str, mount: &str) -> Result<MountSnap> {
+        Ok(MountSnap {
+            device: device.into(),
+            mount: mount.into(),
+        })
+    }
+}
+
+impl Action for MountSnap {
+    fn perform(&mut self) -> Result<()> {
+        Command::new("mkdir")
+            .args(&["-p", &self.mount])
+            .checked_noio()?;
+        Command::new("mount")
+            .args(&[&self.device, &self.mount])
+            .checked_noio()?;
+        Ok(())
+    }
+
+    fn cleanup(&mut self) -> Result<()> {
+        Command::new("umount")
+            .arg(&self.mount)
+            .checked_noio()?;
+        Ok(())
+    }
+}

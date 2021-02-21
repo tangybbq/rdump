@@ -27,7 +27,18 @@ fn main() -> Result<()> {
 
     let mp = lvm.mountpoint("");
     let mut a1 = actions::Stamp::new(&Path::new(&mp).join("snapstamp"))?;
+
+    let mut a2 = actions::LvmSnapshot::new(&lvm.pv, &lvm.prefix,
+        &format!("{}_snap", lvm.prefix))?;
+
+    let mut a3 = actions::MountSnap::new(&lvm.device_name("_snap"),
+        &lvm.mountpoint("_snap"))?;
+
     a1.perform()?;
+    a2.perform()?;
+    a3.perform()?;
+    a3.cleanup()?;
+    a2.cleanup()?;
     a1.cleanup()?;
 
     lvm.cleanup()?;
