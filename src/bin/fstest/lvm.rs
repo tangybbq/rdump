@@ -23,12 +23,12 @@ static MOUNT_BASE: &'static str = "/mnt/test";
 pub struct LvmTest {
     pub pv: String,
     pub prefix: String,
-    fs: FileSystem,
+    pub fs: FileSystem,
     volume_created: bool,
     mount: Option<String>,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum FileSystem {
     Ext4,
     Xfs,

@@ -24,7 +24,18 @@ fn main() -> Result<()> {
 
     // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4)?;
+    backup_lvm(&lvm)?;
+    lvm.cleanup()?;
 
+    // Second test, with xfs
+    let mut lvm = lvm::LvmTest::setup("joke", "xfstest", lvm::FileSystem::Xfs)?;
+    backup_lvm(&lvm)?;
+    lvm.cleanup()?;
+
+    Ok(())
+}
+
+fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
     let mp = lvm.mountpoint("");
     let mut a1 = actions::Stamp::new(&Path::new(&mp).join("snapstamp"))?;
 
@@ -32,7 +43,7 @@ fn main() -> Result<()> {
         &format!("{}_snap", lvm.prefix))?;
 
     let mut a3 = actions::MountSnap::new(&lvm.device_name("_snap"),
-        &lvm.mountpoint("_snap"))?;
+        &lvm.mountpoint("_snap"), lvm.fs == lvm::FileSystem::Xfs)?;
 
     a1.perform()?;
     a2.perform()?;
@@ -40,12 +51,5 @@ fn main() -> Result<()> {
     a3.cleanup()?;
     a2.cleanup()?;
     a1.cleanup()?;
-
-    lvm.cleanup()?;
-
-    // Second test, with xfs
-    let mut lvm = lvm::LvmTest::setup("joke", "xfstest", lvm::FileSystem::Xfs)?;
-    lvm.cleanup()?;
-
     Ok(())
 }

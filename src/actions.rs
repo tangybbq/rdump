@@ -90,13 +90,15 @@ impl Action for LvmSnapshot {
 pub struct MountSnap {
     device: String,
     mount: String,
+    is_xfs: bool,
 }
 
 impl MountSnap {
-    pub fn new(device: &str, mount: &str) -> Result<MountSnap> {
+    pub fn new(device: &str, mount: &str, is_xfs: bool) -> Result<MountSnap> {
         Ok(MountSnap {
             device: device.into(),
             mount: mount.into(),
+            is_xfs,
         })
     }
 }
@@ -106,8 +108,13 @@ impl Action for MountSnap {
         Command::new("mkdir")
             .args(&["-p", &self.mount])
             .checked_noio()?;
+        let opt = if self.is_xfs {
+            "nouuid,noatime"
+        } else {
+            "noatime"
+        };
         Command::new("mount")
-            .args(&[&self.device, &self.mount])
+            .args(&[&self.device, "-o", opt, &self.mount])
             .checked_noio()?;
         Ok(())
     }
