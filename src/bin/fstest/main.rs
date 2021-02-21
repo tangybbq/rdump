@@ -45,9 +45,14 @@ fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
     let mut a3 = actions::MountSnap::new(&lvm.device_name("_snap"),
         &lvm.mountpoint("_snap"), lvm.fs == lvm::FileSystem::Xfs)?;
 
+    let new_mount = lvm.mountpoint("_snap");
+    let mut a4 = actions::LvmRsure::new(&mp, &new_mount)?;
+
     a1.perform()?;
     a2.perform()?;
     a3.perform()?;
+    a4.perform()?;
+    a4.cleanup()?;
     a3.cleanup()?;
     a2.cleanup()?;
     a1.cleanup()?;

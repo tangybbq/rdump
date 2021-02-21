@@ -4,7 +4,7 @@
 //! have setup and teardown aspects.  The runner will perform the teardowns
 //! even if one of the later actions fail.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use log::info;
 use std::{
     fs::OpenOptions,
@@ -129,6 +129,54 @@ impl Action for MountSnap {
         Command::new("umount")
             .arg(&self.mount)
             .checked_noio()?;
+        Ok(())
+    }
+}
+
+pub struct LvmRsure {
+    base_mount: String,
+    mount: String,
+}
+
+impl LvmRsure {
+    pub fn new(base_mount: &str, mount: &str) -> Result<LvmRsure> {
+        Ok(LvmRsure {
+            base_mount: base_mount.into(),
+            mount: mount.into(),
+        })
+    }
+}
+
+// Big TODO: Need to make the error type in rsure a real error type.
+impl Action for LvmRsure {
+    fn perform(&mut self) -> Result<()> {
+        let surefile = format!("{}/2sure.dat.gz", self.mount);
+        let is_update = Path::new(&surefile).is_file();
+
+        info!("Rsure scan of {} to {}", self.mount, surefile);
+        let store = match rsure::parse_store(&surefile) {
+            Ok(s) => s,
+            Err(e) => return Err(anyhow!("Error parsing store: {:?}", e)),
+        };
+
+        let mut tags = rsure::StoreTags::new();
+        tags.insert("name".into(), "TODO: put name here".into());
+
+        match rsure::update(&self.mount, &*store, is_update, &tags) {
+            Ok(()) => (),
+            Err(e) => return Err(anyhow!("Error running rsure update: {:?}", e)),
+        }
+
+        info!("Copy rsure file {} to {}", surefile, self.base_mount);
+        // Use cp command for -p to preserve as much as possible.
+        Command::new("cp")
+            .args(&["-p", &surefile, &self.base_mount])
+            .checked_noio()?;
+
+        Ok(())
+    }
+    fn cleanup(&mut self) -> Result<()> {
+        // No cleanup
         Ok(())
     }
 }
