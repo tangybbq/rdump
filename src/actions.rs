@@ -5,6 +5,7 @@
 //! even if one of the later actions fail.
 
 use anyhow::Result;
+use log::info;
 use std::{
     fs::OpenOptions,
     io::Write,
@@ -35,6 +36,7 @@ impl Stamp {
 
 impl Action for Stamp {
     fn perform(&mut self) -> Result<()> {
+        info!("Writing backup stamp: {:?}", self.path);
         // Since there isn't a convenient "touch" in std, just write
         // something to the file, which will update the timestamp.
         let mut file = OpenOptions::new()
@@ -72,6 +74,7 @@ impl LvmSnapshot {
 
 impl Action for LvmSnapshot {
     fn perform(&mut self) -> Result<()> {
+        info!("LVM2 snapshot of {}/{} to {}", self.pv, self.base, self.snap);
         Command::new("lvcreate")
             .args(&["-L", "1g", "-s", "-n", &self.snap,
                 &format!("{}/{}", self.pv, self.base)])
@@ -80,6 +83,7 @@ impl Action for LvmSnapshot {
     }
 
     fn cleanup(&mut self) -> Result<()> {
+        info!("Cleanup lvm snapshot {}/{}", self.pv, self.snap);
         Command::new("lvremove")
             .args(&["-f", &format!("{}/{}", self.pv, self.snap)])
             .checked_noio()?;
@@ -105,6 +109,7 @@ impl MountSnap {
 
 impl Action for MountSnap {
     fn perform(&mut self) -> Result<()> {
+        info!("Mount LVM2 snapshot {} to {}", self.device, self.mount);
         Command::new("mkdir")
             .args(&["-p", &self.mount])
             .checked_noio()?;
@@ -120,6 +125,7 @@ impl Action for MountSnap {
     }
 
     fn cleanup(&mut self) -> Result<()> {
+        info!("Unmount lvm2 snapshot at {}", self.mount);
         Command::new("umount")
             .arg(&self.mount)
             .checked_noio()?;
