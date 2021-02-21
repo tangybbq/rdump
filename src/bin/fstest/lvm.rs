@@ -74,6 +74,20 @@ impl LvmTest {
         Ok(result)
     }
 
+    /// Update the checkedout tree to a specific version, this simulates
+    /// changes in the filesystem to be backed up.
+    pub fn checkout(&self, version: &str) -> Result<()> {
+        let mp = self.mountpoint("");
+
+        let dest = format!("{}/zephyr", mp);
+        log::info!("Moving FS data in {} to {}", dest, version);
+        Command::new("git")
+            .args(&["checkout", version])
+            .current_dir(&dest)
+            .checked_noio()?;
+        Ok(())
+    }
+
     fn mkfs(&self) -> Result<()> {
         let device = self.device_name("");
 

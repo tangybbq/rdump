@@ -27,10 +27,14 @@ fn main() -> Result<()> {
     // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4)?;
     backup_lvm(&lvm)?;
+    lvm.checkout("v2.0.0")?;
+    backup_lvm(&lvm)?;
     lvm.cleanup()?;
 
     // Second test, with xfs
     let mut lvm = lvm::LvmTest::setup("joke", "xfstest", lvm::FileSystem::Xfs)?;
+    backup_lvm(&lvm)?;
+    lvm.checkout("v2.0.0")?;
     backup_lvm(&lvm)?;
     lvm.cleanup()?;
 
