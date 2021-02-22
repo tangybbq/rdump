@@ -76,7 +76,7 @@ impl Action for LvmSnapshot {
     fn perform(&mut self) -> Result<()> {
         info!("LVM2 snapshot of {}/{} to {}", self.pv, self.base, self.snap);
         Command::new("lvcreate")
-            .args(&["-L", "1g", "-s", "-n", &self.snap,
+            .args(&["-L", "5g", "-s", "-n", &self.snap,
                 &format!("{}/{}", self.pv, self.base)])
             .checked_noio()?;
         Ok(())
