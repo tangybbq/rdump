@@ -63,26 +63,11 @@ impl ConfigFile {
         let names = NameFilter::new(names);
 
         let mut runners = BTreeMap::new();
-
-        let mut run = Runner::new()?;
-        run.push(Box::new(actions::Message::new("Timestamps")?));
-        runners.insert(Phase::Timestamp, run);
-
-        let mut run = Runner::new()?;
-        run.push(Box::new(actions::Message::new("Snapshots")?));
-        runners.insert(Phase::Snapshot, run);
-
-        let mut run = Runner::new()?;
-        run.push(Box::new(actions::Message::new("Mount")?));
-        runners.insert(Phase::Mount, run);
-
-        let mut run = Runner::new()?;
-        run.push(Box::new(actions::Message::new("Rsure")?));
-        runners.insert(Phase::Rsure, run);
-
-        let mut run = Runner::new()?;
-        run.push(Box::new(actions::Message::new("Borg")?));
-        runners.insert(Phase::Borg, run);
+        Self::add_runner(&mut runners, Phase::Timestamp, "Timestamps")?;
+        Self::add_runner(&mut runners, Phase::Snapshot, "Snapshots")?;
+        Self::add_runner(&mut runners, Phase::Mount, "Mount")?;
+        Self::add_runner(&mut runners, Phase::Rsure, "Rsure")?;
+        Self::add_runner(&mut runners, Phase::Borg, "Borg")?;
 
         for simp in &self.simple {
             if !names.contains(&simp.name) {
@@ -109,6 +94,14 @@ impl ConfigFile {
         runner.push(Box::new(actions::Message::new("Finished, cleaning up")?));
 
         Ok(runner)
+    }
+
+    /// Push a new runner, with a banner message for its name.
+    fn add_runner(runners: &mut BTreeMap<Phase, Runner>, phase: Phase, message: &str) -> Result<()> {
+        let mut run = Runner::new()?;
+        run.push(Box::new(actions::Message::new(message)?));
+        runners.insert(phase, run);
+        Ok(())
     }
 }
 
