@@ -29,22 +29,24 @@ impl Runner {
     /// If any perform results in an Error, that will be the return result
     /// of this function, although cleanups will be called for other
     /// actions.
-    pub fn run(self) -> Result<()> {
+    pub fn run(self, pretend: bool) -> Result<()> {
         let mut cleanups = vec![];
 
         for mut action in self.actions.into_iter() {
-            // TODO: Add a descriptive method.
-            match action.perform() {
-                Ok(()) => cleanups.push(action),
-                Err(err) => {
-                    log::error!("Error with action: {:?}", err);
-                    Self::run_cleanups(cleanups);
-                    return Err(err);
-                },
+            if pretend {
+                println!("would: {}", action.describe());
+            } else {
+                // TODO: Add a descriptive method.
+                match action.perform() {
+                    Ok(()) => cleanups.push(action),
+                    Err(err) => {
+                        log::error!("Error with action: {:?}", err);
+                        Self::run_cleanups(cleanups);
+                        return Err(err);
+                    },
+                }
             }
         }
-
-        Self::run_cleanups(cleanups);
 
         Ok(())
     }

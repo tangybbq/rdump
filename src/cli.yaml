@@ -13,6 +13,10 @@ subcommands:
   - backup:
       about: Perform backups according to config file
       args:
+        - pretend:
+            short: n
+            long: pretend
+            help: Show what would be run
         - NAME:
             help: Names of volumes to backup.
             multiple: true

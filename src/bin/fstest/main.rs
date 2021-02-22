@@ -64,7 +64,7 @@ fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
         "/home/davidb/back/fstest-borg.sh",
         &backup_name)?));
 
-    run.run()?;
+    run.run(false)?;
 
     Ok(())
 }
