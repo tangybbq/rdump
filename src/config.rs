@@ -1,6 +1,7 @@
 //! Configuration.
 
 use anyhow::Result;
+use chrono::Utc;
 use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashSet},
@@ -49,6 +50,7 @@ enum Phase {
     Snapshot,
     Mount,
     Rsure,
+    Borg,
 }
 
 impl ConfigFile {
@@ -77,12 +79,16 @@ impl ConfigFile {
         run.push(Box::new(actions::Message::new("Rsure")?));
         runners.insert(Phase::Rsure, run);
 
+        let mut run = Runner::new()?;
+        run.push(Box::new(actions::Message::new("Borg")?));
+        runners.insert(Phase::Borg, run);
+
         for simp in &self.simple {
             if !names.contains(&simp.name) {
                 break;
             }
 
-            simp.add_actions(&mut runners)?;
+            simp.add_actions(&mut runners, self)?;
         }
 
         for lvm in &self.lvm {
@@ -90,7 +96,7 @@ impl ConfigFile {
                 break;
             }
 
-            lvm.add_actions(&mut runners)?;
+            lvm.add_actions(&mut runners, self)?;
         }
 
         let mut runner = Runner::new()?;
@@ -106,7 +112,7 @@ impl ConfigFile {
 }
 
 impl Simple {
-    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>) -> Result<()> {
+    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>, config: &ConfigFile) -> Result<()> {
         let a1 = actions::Stamp::new(
             &Path::new(&self.mount).join("snapstamp"))?;
         runners.get_mut(&Phase::Timestamp).unwrap().push(Box::new(a1));
@@ -114,12 +120,20 @@ impl Simple {
         let a4 = actions::SimpleRsure::new(&self.mount)?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
 
+        let local = Utc::now().format("%Y%m%dT%H%M%S");
+        let backup_name = format!("{}-{}", self.name, local);
+        let a5 = actions::BorgBackup::new(
+            &self.mount,
+            &config.config.borg,
+            &backup_name)?;
+        runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
+
         Ok(())
     }
 }
 
 impl Lvm {
-    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>) -> Result<()> {
+    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>, config: &ConfigFile) -> Result<()> {
         let a1 = actions::Stamp::new(
             &Path::new(&self.mount).join("snapstamp"))?;
         runners.get_mut(&Phase::Timestamp).unwrap().push(Box::new(a1));
@@ -134,6 +148,14 @@ impl Lvm {
 
         let a4 = actions::LvmRsure::new(&self.mount, &self.snap)?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
+
+        let local = Utc::now().format("%Y%m%dT%H%M%S");
+        let backup_name = format!("{}-{}", self.name, local);
+        let a5 = actions::BorgBackup::new(
+            &self.snap,
+            &config.config.borg,
+            &backup_name)?;
+        runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
         Ok(())
     }
