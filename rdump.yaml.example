@@ -1,0 +1,52 @@
+# Rdump configuration
+
+# Configuration options that control the whole process.
+config:
+  # The path to a borg wrapping script.  This is intended to setup
+  # variables such as BORG_PASSWORD and BORG_REPO before running the
+  # regular borg executable.
+  # For testing:
+  # borg: /home/davidb/back/fstest-borg.sh
+  # For real backups:
+  borg: /home/davidb/back/borg.sh
+
+# Simple volumes are for things such as /boot and /boot/efi that
+# aren't managed through LVM.  These should be quiescent through the
+# entire backup.
+simple:
+  - name: boot
+    mount: /boot
+    actions: [rsure, borg]
+  - name: boot-efi
+    mount: /boot/efi
+    actions: [rsure, borg]
+
+# lvm volumes are traditional Linux filesystems (ext4 and Xfs) that
+# can be backed up with snapshots.
+lvm:
+  - name: root
+    mount: /
+    snap: /mnt/snap/root
+    vg: joke
+    lv: root
+    lv_snap: root_snap
+    fs: xfs
+    actions: [snap, rsure, borg]
+  - name: home
+    mount: /home
+    snap: /mnt/snap/home
+    vg: joke
+    lv: home
+    lv_snap: home_snap
+    fs: xfs
+    actions: [snap, rsure, borg]
+
+zfs:
+  - web-media:
+      src:
+        host: vaco.davidb.org
+        volume: lint/web-media
+      dest:
+        host: vaco.davidb.org
+        volume: gig/other/vaco/web-media
+
