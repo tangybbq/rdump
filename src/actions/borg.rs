@@ -49,4 +49,8 @@ impl Action for BorgBackup {
         // No cleanup.
         Ok(())
     }
+
+    fn describe(&self) -> String {
+        format!("Borg backup of {} to {}", self.snap, self.name)
+    }
 }

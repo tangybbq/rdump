@@ -19,4 +19,7 @@ mod snaps;
 pub trait Action {
     fn perform(&mut self) -> Result<()>;
     fn cleanup(&mut self) -> Result<()>;
+
+    /// Return a description of this action.
+    fn describe(&self) -> String;
 }

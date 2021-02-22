@@ -50,6 +50,10 @@ impl Action for Stamp {
         // backups.
         Ok(())
     }
+
+    fn describe(&self) -> String {
+        format!("Backup stamp file: {}", self.path)
+    }
 }
 
 pub struct LvmSnapshot {
@@ -84,6 +88,10 @@ impl Action for LvmSnapshot {
             .args(&["-f", &format!("{}/{}", self.pv, self.snap)])
             .checked_noio()?;
         Ok(())
+    }
+
+    fn describe(&self) -> String {
+        format!("LVM2 snapshot of {}/{} to {}", self.pv, self.base, self.snap)
     }
 }
 
@@ -126,6 +134,10 @@ impl Action for MountSnap {
             .arg(&self.mount)
             .checked_noio()?;
         Ok(())
+    }
+
+    fn describe(&self) -> String {
+        format!("Mount LVM2 snapshot {} to {}", self.device, self.mount)
     }
 }
 
@@ -174,5 +186,9 @@ impl Action for LvmRsure {
     fn cleanup(&mut self) -> Result<()> {
         // No cleanup
         Ok(())
+    }
+
+    fn describe(&self) -> String {
+        format!("LVM2-based Rsure scan of {}", self.mount)
     }
 }
