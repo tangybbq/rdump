@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Actions runner.
 //!
 //! Our goal here is to be able to register a series of actions to perform

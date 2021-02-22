@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Main body of code.
 
 pub use anyhow::Result;

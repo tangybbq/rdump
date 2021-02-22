@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! LVM management for the test.
 //!
 //! To simulate active filesystems, we will use git, and in this case, just

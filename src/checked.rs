@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! An extension to Command to allow checked runs.
 
 use anyhow::{anyhow, Result};

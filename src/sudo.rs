@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Sudo support
 //!
 //! Many of the rdump actions need to be performed as root.  Rather than
