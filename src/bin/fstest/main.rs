@@ -8,7 +8,7 @@
 use anyhow::Result;
 use chrono::Utc;
 use rdump::{
-    actions::{self, Action},
+    actions::{self, Runner},
 };
 use std::{
     path::Path,
@@ -43,34 +43,28 @@ fn main() -> Result<()> {
 }
 
 fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
+    let mut run = Runner::new()?;
+
     let mp = lvm.mountpoint("");
-    let mut a1 = actions::Stamp::new(&Path::new(&mp).join("snapstamp"))?;
+    run.push(Box::new(actions::Stamp::new(&Path::new(&mp).join("snapstamp"))?));
 
-    let mut a2 = actions::LvmSnapshot::new(&lvm.pv, &lvm.prefix,
-        &format!("{}_snap", lvm.prefix))?;
+    run.push(Box::new(actions::LvmSnapshot::new(&lvm.pv, &lvm.prefix,
+        &format!("{}_snap", lvm.prefix))?));
 
-    let mut a3 = actions::MountSnap::new(&lvm.device_name("_snap"),
-        &lvm.mountpoint("_snap"), lvm.fs == lvm::FileSystem::Xfs)?;
+    run.push(Box::new(actions::MountSnap::new(&lvm.device_name("_snap"),
+        &lvm.mountpoint("_snap"), lvm.fs == lvm::FileSystem::Xfs)?));
 
     let new_mount = lvm.mountpoint("_snap");
-    let mut a4 = actions::LvmRsure::new(&mp, &new_mount)?;
+    run.push(Box::new(actions::LvmRsure::new(&mp, &new_mount)?));
 
     let local = Utc::now().format("%Y%m%dT%H%M%S");
     let backup_name = format!("{}-{}", lvm.prefix, local);
-    let mut a5 = actions::BorgBackup::new(
+    run.push(Box::new(actions::BorgBackup::new(
         &new_mount,
         "/home/davidb/back/fstest-borg.sh",
-        &backup_name)?;
+        &backup_name)?));
 
-    a1.perform()?;
-    a2.perform()?;
-    a3.perform()?;
-    a4.perform()?;
-    a5.perform()?;
-    a5.cleanup()?;
-    a4.cleanup()?;
-    a3.cleanup()?;
-    a2.cleanup()?;
-    a1.cleanup()?;
+    run.run()?;
+
     Ok(())
 }

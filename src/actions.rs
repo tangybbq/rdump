@@ -10,8 +10,10 @@ pub use borg::BorgBackup;
 pub use snaps::{
     Stamp, LvmSnapshot, MountSnap, LvmRsure,
 };
+pub use runner::Runner;
 
 mod borg;
+mod runner;
 mod snaps;
 
 pub trait Action {
