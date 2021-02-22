@@ -10,6 +10,12 @@ args:
       help: Set a custom config file
       takes_value: true
 subcommands:
+  - backup:
+      about: Perform backups according to config file
+      args:
+        - NAME:
+            help: Names of volumes to backup.
+            multiple: true
   - clone:
       about: Clone ZFS filesystems
       args:

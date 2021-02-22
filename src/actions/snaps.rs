@@ -192,3 +192,47 @@ impl Action for LvmRsure {
         format!("LVM2-based Rsure scan of {}", self.mount)
     }
 }
+
+pub struct SimpleRsure {
+    mount: String,
+}
+
+impl SimpleRsure {
+    pub fn new(mount: &str) -> Result<SimpleRsure> {
+        Ok(SimpleRsure {
+            mount: mount.into(),
+        })
+    }
+}
+
+impl Action for SimpleRsure {
+    fn perform(&mut self) -> Result<()> {
+        let surefile = format!("{}/2sure.dat.gz", self.mount);
+        let is_update = Path::new(&surefile).is_file();
+
+        info!("Rsure scan of {} to {}", self.mount, surefile);
+        let store = match rsure::parse_store(&surefile) {
+            Ok(s) => s,
+            Err(e) => return Err(anyhow!("Error parsing store: {:?}", e)),
+        };
+
+        let mut tags = rsure::StoreTags::new();
+        tags.insert("name".into(), "TODO: put name here".into());
+
+        match rsure::update(&self.mount, &*store, is_update, &tags) {
+            Ok(()) => (),
+            Err(e) => return Err(anyhow!("Error running rsure update: {:?}", e)),
+        }
+
+        Ok(())
+    }
+
+    fn cleanup(&mut self) -> Result<()> {
+        // No cleanup
+        Ok(())
+    }
+
+    fn describe(&self) -> String {
+        format!("Simple Rsure scan of {}", self.mount)
+    }
+}

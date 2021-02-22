@@ -61,4 +61,10 @@ impl Runner {
             }
         }
     }
+
+    /// Consume the argument, appending all actions from it into the self
+    /// runner.
+    pub fn append(&mut self, mut other: Runner) {
+        self.actions.append(&mut other.actions);
+    }
 }

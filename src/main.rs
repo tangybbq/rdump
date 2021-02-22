@@ -10,20 +10,25 @@ use std::{
     path::Path,
     thread,
 };
-use rdump::Zfs;
+use rdump::{ConfigFile, Zfs};
 
 fn main() -> Result<()> {
     if false {
         wasy()?;
     }
 
+    rsure::log_init();
+
     let yaml = load_yaml!("cli.yaml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    println!("{:#?}", matches);
+    // println!("{:#?}", matches);
 
-    let config = matches.value_of("config").unwrap_or("rdump.yaml");
-    println!("config: {:?}", config);
+    let cname = matches.value_of("config").unwrap_or("rdump.yaml");
+    // println!("cname: {:?}", cname);
+
+    let config = ConfigFile::load(&cname)?;
+    // println!("Config: {:#?}", config);
 
     if let Some(matches) = matches.subcommand_matches("clone") {
         let volume = matches.value_of("VOLUME").unwrap();
@@ -31,6 +36,12 @@ fn main() -> Result<()> {
         println!("volume: {:?}", volume);
         println!("Sleeping 1 minute");
         thread::sleep(std::time::Duration::from_secs(60));
+    } else if let Some(matches) = matches.subcommand_matches("backup") {
+        let names: Vec<_> = matches.values_of("NAME").map(|c| c.collect())
+            .unwrap_or(vec![]);
+
+        let runner = config.build_runner(&names)?;
+        runner.run()?;
     }
 
     Ok(())
