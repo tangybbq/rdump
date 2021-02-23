@@ -5,7 +5,7 @@
 //! have setup and teardown aspects.  The runner will perform the teardowns
 //! even if one of the later actions fail.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use log::info;
 use std::{
     fs::OpenOptions,
@@ -163,18 +163,12 @@ impl Action for LvmRsure {
         let is_update = Path::new(&surefile).is_file();
 
         info!("Rsure scan of {} to {}", self.mount, surefile);
-        let store = match rsure::parse_store(&surefile) {
-            Ok(s) => s,
-            Err(e) => return Err(anyhow!("Error parsing store: {:?}", e)),
-        };
+        let store = rsure::parse_store(&surefile)?;
 
         let mut tags = rsure::StoreTags::new();
         tags.insert("name".into(), "TODO: put name here".into());
 
-        match rsure::update(&self.mount, &*store, is_update, &tags) {
-            Ok(()) => (),
-            Err(e) => return Err(anyhow!("Error running rsure update: {:?}", e)),
-        }
+        rsure::update(&self.mount, &*store, is_update, &tags)?;
 
         info!("Copy rsure file {} to {}", surefile, self.base_mount);
         // Use cp command for -p to preserve as much as possible.
@@ -212,18 +206,12 @@ impl Action for SimpleRsure {
         let is_update = Path::new(&surefile).is_file();
 
         info!("Rsure scan of {} to {}", self.mount, surefile);
-        let store = match rsure::parse_store(&surefile) {
-            Ok(s) => s,
-            Err(e) => return Err(anyhow!("Error parsing store: {:?}", e)),
-        };
+        let store = rsure::parse_store(&surefile)?;
 
         let mut tags = rsure::StoreTags::new();
         tags.insert("name".into(), "TODO: put name here".into());
 
-        match rsure::update(&self.mount, &*store, is_update, &tags) {
-            Ok(()) => (),
-            Err(e) => return Err(anyhow!("Error running rsure update: {:?}", e)),
-        }
+        rsure::update(&self.mount, &*store, is_update, &tags)?;
 
         Ok(())
     }
