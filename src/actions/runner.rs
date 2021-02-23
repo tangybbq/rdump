@@ -49,6 +49,8 @@ impl Runner {
             }
         }
 
+        Self::run_cleanups(cleanups);
+
         Ok(())
     }
 
