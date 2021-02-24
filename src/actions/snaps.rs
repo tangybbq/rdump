@@ -145,13 +145,15 @@ impl Action for MountSnap {
 pub struct LvmRsure {
     base_mount: String,
     mount: String,
+    name: String,
 }
 
 impl LvmRsure {
-    pub fn new(base_mount: &str, mount: &str) -> Result<LvmRsure> {
+    pub fn new(base_mount: &str, mount: &str, name: &str) -> Result<LvmRsure> {
         Ok(LvmRsure {
             base_mount: base_mount.into(),
             mount: mount.into(),
+            name: name.into(),
         })
     }
 }
@@ -166,7 +168,7 @@ impl Action for LvmRsure {
         let store = rsure::parse_store(&surefile)?;
 
         let mut tags = rsure::StoreTags::new();
-        tags.insert("name".into(), "TODO: put name here".into());
+        tags.insert("name".into(), self.name.clone());
 
         rsure::update(&self.mount, &*store, is_update, &tags)?;
 
@@ -190,12 +192,14 @@ impl Action for LvmRsure {
 
 pub struct SimpleRsure {
     mount: String,
+    name: String,
 }
 
 impl SimpleRsure {
-    pub fn new(mount: &str) -> Result<SimpleRsure> {
+    pub fn new(mount: &str, name: &str) -> Result<SimpleRsure> {
         Ok(SimpleRsure {
             mount: mount.into(),
+            name: name.into(),
         })
     }
 }
@@ -209,7 +213,7 @@ impl Action for SimpleRsure {
         let store = rsure::parse_store(&surefile)?;
 
         let mut tags = rsure::StoreTags::new();
-        tags.insert("name".into(), "TODO: put name here".into());
+        tags.insert("name".into(), self.name.clone());
 
         rsure::update(&self.mount, &*store, is_update, &tags)?;
 

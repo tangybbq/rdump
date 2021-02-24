@@ -55,10 +55,10 @@ fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
     run.push(Box::new(actions::MountSnap::new(&lvm.device_name("_snap"),
         &lvm.mountpoint("_snap"), lvm.fs == lvm::FileSystem::Xfs)?));
 
-    let new_mount = lvm.mountpoint("_snap");
-    run.push(Box::new(actions::LvmRsure::new(&mp, &new_mount)?));
-
     let local = Utc::now().format("%Y%m%dT%H%M%S");
+    let new_mount = lvm.mountpoint("_snap");
+    run.push(Box::new(actions::LvmRsure::new(&mp, &new_mount, &format!("{}", local))?));
+
     let backup_name = format!("{}-{}", lvm.prefix, local);
     run.push(Box::new(actions::BorgBackup::new(
         &new_mount,

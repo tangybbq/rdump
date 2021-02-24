@@ -111,10 +111,10 @@ impl Simple {
             &Path::new(&self.mount).join("snapstamp"))?;
         runners.get_mut(&Phase::Timestamp).unwrap().push(Box::new(a1));
 
-        let a4 = actions::SimpleRsure::new(&self.mount)?;
+        let local = Utc::now().format("%Y%m%dT%H%M%S");
+        let a4 = actions::SimpleRsure::new(&self.mount, &format!("{}", local))?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
 
-        let local = Utc::now().format("%Y%m%dT%H%M%S");
         let backup_name = format!("{}-{}", self.name, local);
         let a5 = actions::BorgBackup::new(
             &self.mount,
@@ -140,10 +140,11 @@ impl Lvm {
             self.fs == "xfs")?;
         runners.get_mut(&Phase::Mount).unwrap().push(Box::new(a3));
 
-        let a4 = actions::LvmRsure::new(&self.mount, &self.snap)?;
+        let local = Utc::now().format("%Y%m%dT%H%M%S");
+        let a4 = actions::LvmRsure::new(&self.mount, &self.snap,
+            &format!("{}", local))?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
 
-        let local = Utc::now().format("%Y%m%dT%H%M%S");
         let backup_name = format!("{}-{}", self.name, local);
         let a5 = actions::BorgBackup::new(
             &self.snap,
