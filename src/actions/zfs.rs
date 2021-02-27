@@ -18,14 +18,16 @@ static RSYNC: &'static str = "/usr/bin/rsync";
 pub struct Rsync {
     src: String,
     dest: String,
+    acls: bool,
     verbose: bool,
 }
 
 impl Rsync {
-    pub fn new(src: &str, dest: &str, verbose: bool) -> Result<Rsync> {
+    pub fn new(src: &str, dest: &str, acls: bool, verbose: bool) -> Result<Rsync> {
         Ok(Rsync {
             src: src.into(),
             dest: dest.into(),
+            acls: acls,
             verbose: verbose,
         })
     }
@@ -35,9 +37,12 @@ impl Action for Rsync {
     fn perform(&mut self) -> Result<()> {
         info!("Rsyncing from {} to {}", self.src, self.dest);
         let mut cmd = Command::new(RSYNC);
-        cmd.args(&["-aHAX", "--delete"]);
+        cmd.args(&["-aHx", "--delete"]);
         if self.verbose {
             cmd.arg("-i");
+        }
+        if self.acls {
+            cmd.arg("-AX");
         }
         cmd.arg(&format!("{}/.", self.src));
         cmd.arg(&format!("{}/.", self.dest));

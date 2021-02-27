@@ -147,7 +147,7 @@ impl Simple {
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
         if let Some(ref zfs) = self.zfs {
-            let a6 = actions::Rsync::new(&self.mount, &zfs.mount, false)?;
+            let a6 = actions::Rsync::new(&self.mount, &zfs.mount, false, false)?;
             runners.get_mut(&Phase::Rsync).unwrap().push(Box::new(a6));
 
             let a7 = actions::ZfsSnapshot::new(&zfs.volume, &format!("{}", local))?;
@@ -192,7 +192,7 @@ impl Lvm {
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
         if let Some(ref zfs) = self.zfs {
-            let a6 = actions::Rsync::new(&self.snap, &zfs.mount, false)?;
+            let a6 = actions::Rsync::new(&self.snap, &zfs.mount, true, false)?;
             runners.get_mut(&Phase::Rsync).unwrap().push(Box::new(a6));
 
             let a7 = actions::ZfsSnapshot::new(&zfs.volume, &format!("{}", local))?;

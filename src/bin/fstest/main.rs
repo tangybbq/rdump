@@ -83,6 +83,7 @@ fn backup_lvm(lvm: &lvm::LvmTest, zfs: &zfs::ZfsTest) -> Result<()> {
         &new_mount,
         &zfs.get_mount(),
         true,
+        true,
     )?));
 
     run.push(Box::new(actions::ZfsSnapshot::new(
