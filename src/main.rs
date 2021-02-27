@@ -2,16 +2,9 @@
 //! Backup driver
 
 use anyhow::Result;
-use clap::{
-    App,
-    load_yaml,
-};
-use std::{
-    fs,
-    path::Path,
-    thread,
-};
+use clap::{load_yaml, App};
 use rdump::{ConfigFile, Zfs};
+use std::{fs, path::Path, thread};
 
 fn main() -> Result<()> {
     if false {
@@ -40,7 +33,9 @@ fn main() -> Result<()> {
     } else if let Some(matches) = matches.subcommand_matches("backup") {
         let pretend = matches.occurrences_of("pretend") > 0;
 
-        let names: Vec<_> = matches.values_of("NAME").map(|c| c.collect())
+        let names: Vec<_> = matches
+            .values_of("NAME")
+            .map(|c| c.collect())
             .unwrap_or(vec![]);
 
         let runner = config.build_runner(&names)?;

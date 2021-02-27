@@ -3,10 +3,10 @@
 
 pub use anyhow::Result;
 
-pub use zfs::Zfs;
-pub use sudo::Sudo;
 pub use checked::CheckedExt;
 pub use config::ConfigFile;
+pub use sudo::Sudo;
+pub use zfs::Zfs;
 
 pub mod actions;
 mod checked;

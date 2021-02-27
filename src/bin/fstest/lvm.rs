@@ -13,10 +13,7 @@
 use rdump::CheckedExt;
 
 use anyhow::Result;
-use std::{
-    mem,
-    process::Command,
-};
+use std::{mem, process::Command};
 
 static ZEPHYR_PARENT: &'static str = "/lint/zephyr/zephyr.git";
 static MOUNT_BASE: &'static str = "/mnt/test";
@@ -94,14 +91,10 @@ impl LvmTest {
 
         match self.fs {
             FileSystem::Ext4 => {
-                Command::new("mkfs.ext4")
-                    .arg(&device)
-                    .checked_noio()?;
+                Command::new("mkfs.ext4").arg(&device).checked_noio()?;
             }
             FileSystem::Xfs => {
-                Command::new("mkfs.xfs")
-                    .arg(&device)
-                    .checked_noio()?;
+                Command::new("mkfs.xfs").arg(&device).checked_noio()?;
             }
         }
 
@@ -113,9 +106,7 @@ impl LvmTest {
         let mp = self.mountpoint(extra);
 
         // Make sure the mount directory exists.
-        Command::new("mkdir")
-            .args(&["-p", &mp])
-            .checked_noio()?;
+        Command::new("mkdir").args(&["-p", &mp]).checked_noio()?;
 
         match self.fs {
             FileSystem::Ext4 => {
@@ -153,9 +144,7 @@ impl LvmTest {
         log::info!("Lvm cleanup");
         if let Some(mp) = self.mount.take() {
             log::info!("Unmounting {}", mp);
-            Command::new("umount")
-                .arg(&mp)
-                .checked_noio()?;
+            Command::new("umount").arg(&mp).checked_noio()?;
         }
 
         if mem::replace(&mut self.volume_created, false) {

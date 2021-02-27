@@ -6,8 +6,8 @@
 //! run the cleanup on all actions that have completed, regardless of any
 //! errors that may have happened.
 
-use anyhow::Result;
 use super::Action;
+use anyhow::Result;
 
 pub struct Runner {
     actions: Vec<Box<dyn Action>>,
@@ -44,7 +44,7 @@ impl Runner {
                         log::error!("Error with action: {:?}", err);
                         Self::run_cleanups(cleanups);
                         return Err(err);
-                    },
+                    }
                 }
             }
         }

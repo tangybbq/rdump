@@ -3,12 +3,10 @@
 
 use anyhow::Result;
 use log::info;
-use std::{
-    process::Command,
-};
+use std::process::Command;
 
-use crate::checked::CheckedExt;
 use super::Action;
+use crate::checked::CheckedExt;
 
 /// An action that performs a borg backup.  This needs a path to a borg
 /// invoking script (TODO: We pass the passwords through this way, but
@@ -38,10 +36,15 @@ impl Action for BorgBackup {
     fn perform(&mut self) -> Result<()> {
         info!("Running borg backup of {} via {}", self.snap, self.name);
         Command::new(&self.script)
-            .args(&["create", "--exclude-caches", "-x", "--stat",
+            .args(&[
+                "create",
+                "--exclude-caches",
+                "-x",
+                "--stat",
                 "--progress",
                 &format!("::{}", self.name),
-                &self.snap])
+                &self.snap,
+            ])
             .checked_noio()?;
         Ok(())
     }

@@ -179,11 +179,14 @@ impl Zfs {
 
     /// Clone one volume tree to another.  Perform should be set to true to
     /// actually do the clones, otherwise it just prints what it would do.
-    pub fn clone(&self,
-                 source: &str,
-                 dest: &str,
-                 dest_zfs: &Zfs,
-                 perform: bool, excludes: &[&str]) -> Result<()> {
+    pub fn clone(
+        &self,
+        source: &str,
+        dest: &str,
+        dest_zfs: &Zfs,
+        perform: bool,
+        excludes: &[&str],
+    ) -> Result<()> {
         let excludes = Exclusions::new(excludes)?;
 
         // Get filtered views of the source and destination filesystems under the given trees.
@@ -258,11 +261,13 @@ impl Zfs {
 
     /// Clone a single filesystem to an existing volume.  We assume there are no snapshots on the
     /// destination that aren't on the source (otherwise it isn't possible to do the clone).
-    fn clone_one(&self,
-                 source: &Filesystem,
-                 dest: &Filesystem,
-                 dest_zfs: &Zfs,
-                 perform: bool) -> Result<()> {
+    fn clone_one(
+        &self,
+        source: &Filesystem,
+        dest: &Filesystem,
+        dest_zfs: &Zfs,
+        perform: bool,
+    ) -> Result<()> {
         if let Some(ssnap) = dest.snaps.last() {
             if !source.snaps.contains(ssnap) {
                 return Err(anyhow!("Last dest snapshot not present in source"));
@@ -287,7 +292,14 @@ impl Zfs {
             println!("Estimate: {}", humanize_size(size));
 
             if perform {
-                self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size)?;
+                self.do_clone(
+                    &source.name,
+                    &dest.name,
+                    Some(ssnap),
+                    dsnap,
+                    &dest_zfs,
+                    size,
+                )?;
             }
 
             Ok(())
@@ -314,7 +326,14 @@ impl Zfs {
             if ssnap != dsnap {
                 let size = self.estimate_size(&source.name, Some(ssnap), dsnap)?;
                 if perform {
-                    self.do_clone(&source.name, &dest.name, Some(ssnap), dsnap, &dest_zfs, size)?;
+                    self.do_clone(
+                        &source.name,
+                        &dest.name,
+                        Some(ssnap),
+                        dsnap,
+                        &dest_zfs,
+                        size,
+                    )?;
                 }
             }
 
@@ -526,10 +545,7 @@ impl Zfs {
             let line = line?;
             let fields: Vec<_> = line.split('\t').collect();
             if fields.len() != 4 {
-                return Err(anyhow!(
-                    "zfs get line doesn't have 4 fields: {:?}",
-                    line
-                ));
+                return Err(anyhow!("zfs get line doesn't have 4 fields: {:?}", line));
             }
             // 0 - name
             // 1 - property

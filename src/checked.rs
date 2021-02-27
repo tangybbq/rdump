@@ -31,7 +31,11 @@ impl CheckedExt for Command {
     fn checked_output(&mut self) -> Result<Output> {
         let out = self.output()?;
         if !out.status.success() {
-            return Err(anyhow!("Error running command: {:?} ({:?})", self, out.status));
+            return Err(anyhow!(
+                "Error running command: {:?} ({:?})",
+                self,
+                out.status
+            ));
         }
         Ok(out)
     }

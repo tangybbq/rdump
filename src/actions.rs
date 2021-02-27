@@ -8,10 +8,8 @@
 use anyhow::Result;
 
 pub use borg::BorgBackup;
-pub use snaps::{
-    Stamp, LvmSnapshot, MountSnap, LvmRsure, SimpleRsure,
-};
 pub use runner::Runner;
+pub use snaps::{LvmRsure, LvmSnapshot, MountSnap, SimpleRsure, Stamp};
 
 mod borg;
 mod runner;
@@ -33,9 +31,7 @@ pub struct Message {
 
 impl Message {
     pub fn new(text: &str) -> Result<Message> {
-        Ok(Message{
-            text: text.into(),
-        })
+        Ok(Message { text: text.into() })
     }
 }
 

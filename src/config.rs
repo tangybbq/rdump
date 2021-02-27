@@ -97,7 +97,11 @@ impl ConfigFile {
     }
 
     /// Push a new runner, with a banner message for its name.
-    fn add_runner(runners: &mut BTreeMap<Phase, Runner>, phase: Phase, message: &str) -> Result<()> {
+    fn add_runner(
+        runners: &mut BTreeMap<Phase, Runner>,
+        phase: Phase,
+        message: &str,
+    ) -> Result<()> {
         let mut run = Runner::new()?;
         run.push(Box::new(actions::Message::new(message)?));
         runners.insert(phase, run);
@@ -106,20 +110,23 @@ impl ConfigFile {
 }
 
 impl Simple {
-    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>, config: &ConfigFile) -> Result<()> {
-        let a1 = actions::Stamp::new(
-            &Path::new(&self.mount).join("snapstamp"))?;
-        runners.get_mut(&Phase::Timestamp).unwrap().push(Box::new(a1));
+    fn add_actions(
+        &self,
+        runners: &mut BTreeMap<Phase, Runner>,
+        config: &ConfigFile,
+    ) -> Result<()> {
+        let a1 = actions::Stamp::new(&Path::new(&self.mount).join("snapstamp"))?;
+        runners
+            .get_mut(&Phase::Timestamp)
+            .unwrap()
+            .push(Box::new(a1));
 
         let local = Utc::now().format("%Y%m%dT%H%M%S");
         let a4 = actions::SimpleRsure::new(&self.mount, &format!("{}", local))?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
 
         let backup_name = format!("{}-{}", self.name, local);
-        let a5 = actions::BorgBackup::new(
-            &self.mount,
-            &config.config.borg,
-            &backup_name)?;
+        let a5 = actions::BorgBackup::new(&self.mount, &config.config.borg, &backup_name)?;
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
         Ok(())
@@ -127,29 +134,33 @@ impl Simple {
 }
 
 impl Lvm {
-    fn add_actions(&self, runners: &mut BTreeMap<Phase, Runner>, config: &ConfigFile) -> Result<()> {
-        let a1 = actions::Stamp::new(
-            &Path::new(&self.mount).join("snapstamp"))?;
-        runners.get_mut(&Phase::Timestamp).unwrap().push(Box::new(a1));
+    fn add_actions(
+        &self,
+        runners: &mut BTreeMap<Phase, Runner>,
+        config: &ConfigFile,
+    ) -> Result<()> {
+        let a1 = actions::Stamp::new(&Path::new(&self.mount).join("snapstamp"))?;
+        runners
+            .get_mut(&Phase::Timestamp)
+            .unwrap()
+            .push(Box::new(a1));
 
         let a2 = actions::LvmSnapshot::new(&self.vg, &self.lv, &self.lv_snap)?;
-        runners.get_mut(&Phase::Snapshot).unwrap().push(Box::new(a2));
+        runners
+            .get_mut(&Phase::Snapshot)
+            .unwrap()
+            .push(Box::new(a2));
 
         let snap_device = format!("/dev/{}/{}", self.vg, self.lv_snap);
-        let a3 = actions::MountSnap::new(&snap_device, &self.snap,
-            self.fs == "xfs")?;
+        let a3 = actions::MountSnap::new(&snap_device, &self.snap, self.fs == "xfs")?;
         runners.get_mut(&Phase::Mount).unwrap().push(Box::new(a3));
 
         let local = Utc::now().format("%Y%m%dT%H%M%S");
-        let a4 = actions::LvmRsure::new(&self.mount, &self.snap,
-            &format!("{}", local))?;
+        let a4 = actions::LvmRsure::new(&self.mount, &self.snap, &format!("{}", local))?;
         runners.get_mut(&Phase::Rsure).unwrap().push(Box::new(a4));
 
         let backup_name = format!("{}-{}", self.name, local);
-        let a5 = actions::BorgBackup::new(
-            &self.snap,
-            &config.config.borg,
-            &backup_name)?;
+        let a5 = actions::BorgBackup::new(&self.snap, &config.config.borg, &backup_name)?;
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
         Ok(())
@@ -165,7 +176,9 @@ impl<'a> NameFilter<'a> {
         if names.len() == 0 {
             NameFilter { names: None }
         } else {
-            NameFilter { names: Some(names.iter().cloned().collect()) }
+            NameFilter {
+                names: Some(names.iter().cloned().collect()),
+            }
         }
     }
 

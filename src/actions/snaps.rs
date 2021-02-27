@@ -7,15 +7,10 @@
 
 use anyhow::Result;
 use log::info;
-use std::{
-    fs::OpenOptions,
-    io::Write,
-    path::Path,
-    process::Command,
-};
+use std::{fs::OpenOptions, io::Write, path::Path, process::Command};
 
-use crate::checked::CheckedExt;
 use super::Action;
+use crate::checked::CheckedExt;
 
 /// An action that creates a timestamp in the filesystem of question.  This
 /// is used by some backup tools to avoid issues with files that are
@@ -27,7 +22,9 @@ pub struct Stamp {
 
 impl Stamp {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Stamp> {
-        Ok(Stamp{ path: path.as_ref().to_str().unwrap().into() })
+        Ok(Stamp {
+            path: path.as_ref().to_str().unwrap().into(),
+        })
     }
 }
 
@@ -75,10 +72,19 @@ impl LvmSnapshot {
 
 impl Action for LvmSnapshot {
     fn perform(&mut self) -> Result<()> {
-        info!("LVM2 snapshot of {}/{} to {}", self.pv, self.base, self.snap);
+        info!(
+            "LVM2 snapshot of {}/{} to {}",
+            self.pv, self.base, self.snap
+        );
         Command::new("lvcreate")
-            .args(&["-L", "5g", "-s", "-n", &self.snap,
-                &format!("{}/{}", self.pv, self.base)])
+            .args(&[
+                "-L",
+                "5g",
+                "-s",
+                "-n",
+                &self.snap,
+                &format!("{}/{}", self.pv, self.base),
+            ])
             .checked_noio()?;
         Ok(())
     }
@@ -92,7 +98,10 @@ impl Action for LvmSnapshot {
     }
 
     fn describe(&self) -> String {
-        format!("LVM2 snapshot of {}/{} to {}", self.pv, self.base, self.snap)
+        format!(
+            "LVM2 snapshot of {}/{} to {}",
+            self.pv, self.base, self.snap
+        )
     }
 }
 
@@ -131,9 +140,7 @@ impl Action for MountSnap {
 
     fn cleanup(&mut self) -> Result<()> {
         info!("Unmount lvm2 snapshot at {}", self.mount);
-        Command::new("umount")
-            .arg(&self.mount)
-            .checked_noio()?;
+        Command::new("umount").arg(&self.mount).checked_noio()?;
         Ok(())
     }
 

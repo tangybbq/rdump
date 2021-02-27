@@ -12,11 +12,7 @@
 
 use crate::Result;
 use anyhow::anyhow;
-use std::{
-    process::Command,
-    thread,
-    time::Duration,
-};
+use std::{process::Command, thread, time::Duration};
 
 pub struct Sudo {
     // The join handle for the background task, so that we can kill it when
@@ -39,16 +35,14 @@ impl Sudo {
         }
 
         let child = if enabled {
-            Some(thread::spawn(|| {
-                loop {
-                    thread::sleep(Duration::from_secs(60));
+            Some(thread::spawn(|| loop {
+                thread::sleep(Duration::from_secs(60));
 
-                    match Sudo::poke_sudo() {
-                        Ok(_) => (),
-                        Err(e) => {
-                            log::error!("Error running background sudo: {:?}", e);
-                            break;
-                        }
+                match Sudo::poke_sudo() {
+                    Ok(_) => (),
+                    Err(e) => {
+                        log::error!("Error running background sudo: {:?}", e);
+                        break;
                     }
                 }
             }))
@@ -75,9 +69,7 @@ impl Sudo {
     /// first time, but as long as it is run regularly, should keep
     /// additional prompts from being needed.
     fn poke_sudo() -> Result<()> {
-        let status = Command::new("sudo")
-            .arg("true")
-            .status()?;
+        let status = Command::new("sudo").arg("true").status()?;
         if !status.success() {
             return Err(anyhow!("unable to run sudo: {:?}", status.code()));
         }
