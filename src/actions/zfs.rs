@@ -5,8 +5,8 @@
 //! filesystems.
 
 use anyhow::Result;
-use log::info;
-use std::process::Command;
+use log::{error, info};
+use std::process::{Command, Stdio};
 
 use super::Action;
 use crate::checked::CheckedExt;
@@ -46,7 +46,18 @@ impl Action for Rsync {
         }
         cmd.arg(&format!("{}/.", self.src));
         cmd.arg(&format!("{}/.", self.dest));
-        cmd.checked_noio()?;
+
+        // Rsync is fairly aggressive about returning error status when
+        // that happens.  Rather than run the checked runner, just capture
+        // and print any errors, but allow the rest of the backup to
+        // proceed.
+        cmd.stderr(Stdio::inherit());
+        cmd.stdin(Stdio::null());
+        let status = cmd.status()?;
+        if !status.success() {
+            error!("Error running command: {:?} ({:?}", cmd, status);
+            error!("Continuing past rsync error");
+        }
         Ok(())
     }
 
