@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     // println!("cname: {:?}", cname);
 
     let config = ConfigFile::load(&cname)?;
-    // println!("Config: {:#?}", config);
+    println!("Config: {:#?}", config);
 
     if let Some(matches) = matches.subcommand_matches("clone") {
         let volume = matches.value_of("VOLUME").unwrap();

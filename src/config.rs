@@ -58,6 +58,9 @@ enum Phase {
     Borg,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Actions(Vec<String>);
+
 impl ConfigFile {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<ConfigFile> {
         Ok(serde_yaml::from_reader(File::open(path)?)?)
@@ -191,5 +194,11 @@ impl<'a> NameFilter<'a> {
             None => true,
             Some(ref set) => set.contains(name),
         }
+    }
+}
+
+impl Actions {
+    pub fn contains(&self, item: &str) -> bool {
+        self.0.iter().find(|s| s.as_str() == item).is_some()
     }
 }
