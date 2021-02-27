@@ -28,7 +28,9 @@ pub struct Config {
 pub struct Simple {
     name: String,
     mount: String,
-    actions: Vec<String>,
+    actions: Actions,
+    // A possible ZFS filesystem to rsync mirror to.
+    zfs: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,7 +42,9 @@ pub struct Lvm {
     lv: String,
     lv_snap: String,
     fs: String,
-    actions: Vec<String>,
+    actions: Actions,
+    // A possible ZFS filesystem to rsync mirror to.
+    zfs: Option<String>,
 }
 
 // These phases provide a convenient way to group all of a given phase
