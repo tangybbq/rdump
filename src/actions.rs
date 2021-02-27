@@ -10,10 +10,12 @@ use anyhow::Result;
 pub use borg::BorgBackup;
 pub use runner::Runner;
 pub use snaps::{LvmRsure, LvmSnapshot, MountSnap, SimpleRsure, Stamp};
+pub use zfs::{Rsync, ZfsSnapshot};
 
 mod borg;
 mod runner;
 mod snaps;
+mod zfs;
 
 pub trait Action {
     fn perform(&mut self) -> Result<()>;

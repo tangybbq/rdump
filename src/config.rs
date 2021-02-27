@@ -30,7 +30,7 @@ pub struct Simple {
     mount: String,
     actions: Actions,
     // A possible ZFS filesystem to rsync mirror to.
-    zfs: Option<String>,
+    zfs: Option<Zfs>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,7 +44,7 @@ pub struct Lvm {
     fs: String,
     actions: Actions,
     // A possible ZFS filesystem to rsync mirror to.
-    zfs: Option<String>,
+    zfs: Option<Zfs>,
 }
 
 // These phases provide a convenient way to group all of a given phase
@@ -56,10 +56,18 @@ enum Phase {
     Mount,
     Rsure,
     Borg,
+    Rsync,
+    ZfsSnapshot,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Actions(Vec<String>);
+
+#[derive(Debug, Deserialize)]
+pub struct Zfs {
+    volume: String,
+    mount: String,
+}
 
 impl ConfigFile {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<ConfigFile> {
@@ -75,6 +83,8 @@ impl ConfigFile {
         Self::add_runner(&mut runners, Phase::Mount, "Mount")?;
         Self::add_runner(&mut runners, Phase::Rsure, "Rsure")?;
         Self::add_runner(&mut runners, Phase::Borg, "Borg")?;
+        Self::add_runner(&mut runners, Phase::Rsync, "Rsync")?;
+        Self::add_runner(&mut runners, Phase::ZfsSnapshot, "ZfsSnapshot")?;
 
         for simp in &self.simple {
             if !names.contains(&simp.name) {
@@ -136,6 +146,17 @@ impl Simple {
         let a5 = actions::BorgBackup::new(&self.mount, &config.config.borg, &backup_name)?;
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
 
+        if let Some(ref zfs) = self.zfs {
+            let a6 = actions::Rsync::new(&self.mount, &zfs.mount, false)?;
+            runners.get_mut(&Phase::Rsync).unwrap().push(Box::new(a6));
+
+            let a7 = actions::ZfsSnapshot::new(&zfs.volume, &format!("{}", local))?;
+            runners
+                .get_mut(&Phase::ZfsSnapshot)
+                .unwrap()
+                .push(Box::new(a7));
+        }
+
         Ok(())
     }
 }
@@ -169,6 +190,17 @@ impl Lvm {
         let backup_name = format!("{}-{}", self.name, local);
         let a5 = actions::BorgBackup::new(&self.snap, &config.config.borg, &backup_name)?;
         runners.get_mut(&Phase::Borg).unwrap().push(Box::new(a5));
+
+        if let Some(ref zfs) = self.zfs {
+            let a6 = actions::Rsync::new(&self.snap, &zfs.mount, false)?;
+            runners.get_mut(&Phase::Rsync).unwrap().push(Box::new(a6));
+
+            let a7 = actions::ZfsSnapshot::new(&zfs.volume, &format!("{}", local))?;
+            runners
+                .get_mut(&Phase::ZfsSnapshot)
+                .unwrap()
+                .push(Box::new(a7));
+        }
 
         Ok(())
     }

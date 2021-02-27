@@ -12,6 +12,7 @@ use rdump::actions::{self, Runner};
 use std::path::Path;
 
 mod lvm;
+mod zfs;
 
 fn main() -> Result<()> {
     if users::get_effective_uid() != 0 {
@@ -24,22 +25,26 @@ fn main() -> Result<()> {
 
     // First test, with ext4
     let mut lvm = lvm::LvmTest::setup("joke", "fstest", lvm::FileSystem::Ext4)?;
-    backup_lvm(&lvm)?;
+    let zfs = zfs::ZfsTest::setup()?;
+    backup_lvm(&lvm, &zfs)?;
     lvm.checkout("v2.0.0")?;
-    backup_lvm(&lvm)?;
+    backup_lvm(&lvm, &zfs)?;
+    zfs.cleanup()?;
     lvm.cleanup()?;
 
     // Second test, with xfs
     let mut lvm = lvm::LvmTest::setup("joke", "xfstest", lvm::FileSystem::Xfs)?;
-    backup_lvm(&lvm)?;
+    let zfs = zfs::ZfsTest::setup()?;
+    backup_lvm(&lvm, &zfs)?;
     lvm.checkout("v2.0.0")?;
-    backup_lvm(&lvm)?;
+    backup_lvm(&lvm, &zfs)?;
+    zfs.cleanup()?;
     lvm.cleanup()?;
 
     Ok(())
 }
 
-fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
+fn backup_lvm(lvm: &lvm::LvmTest, zfs: &zfs::ZfsTest) -> Result<()> {
     let mut run = Runner::new()?;
 
     let mp = lvm.mountpoint("");
@@ -72,6 +77,17 @@ fn backup_lvm(lvm: &lvm::LvmTest) -> Result<()> {
         &new_mount,
         "/home/davidb/back/fstest-borg.sh",
         &backup_name,
+    )?));
+
+    run.push(Box::new(actions::Rsync::new(
+        &new_mount,
+        &zfs.get_mount(),
+        true,
+    )?));
+
+    run.push(Box::new(actions::ZfsSnapshot::new(
+        &zfs.get_volume(),
+        &format!("{}", local),
     )?));
 
     run.run(false)?;

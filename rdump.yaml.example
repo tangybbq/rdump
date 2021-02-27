@@ -17,9 +17,15 @@ simple:
   - name: boot
     mount: /boot
     actions: [rsure, borg]
+    zfs:
+      volume: lint/self/boot
+      mount: /lint/self/boot
   - name: boot-efi
     mount: /boot/efi
     actions: [rsure, borg]
+    zfs:
+      volume: lint/self/boot-efi
+      mount: /lint/self/boot-efi
 
 # lvm volumes are traditional Linux filesystems (ext4 and Xfs) that
 # can be backed up with snapshots.
@@ -32,6 +38,9 @@ lvm:
     lv_snap: root_snap
     fs: xfs
     actions: [snap, rsure, borg]
+    zfs:
+      volume: lint/self/root
+      mount: /lint/self/root
   - name: home
     mount: /home
     snap: /mnt/snap/home
@@ -40,6 +49,9 @@ lvm:
     lv_snap: home_snap
     fs: xfs
     actions: [snap, rsure, borg]
+    zfs:
+      volume: lint/self/home
+      mount: /lint/self/home
 
 zfs:
   - web-media:
